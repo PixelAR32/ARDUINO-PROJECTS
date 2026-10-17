@@ -1,0 +1,81 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SH110X.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+#define OLED_ADDRESS 0x3C
+
+// Ultrasonic Sensor Pins
+#define TRIG_PIN 3
+#define ECHO_PIN 4
+
+Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+void setup() {
+  Serial.begin(9600);
+  
+  // Initialize Display
+  display.begin(OLED_ADDRESS, true);
+
+  display.setRotation(2);
+  
+  // Initialize Sensor Pins
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SH110X_WHITE);
+  display.setCursor(15, 25);
+  display.print("Distance Monitor");
+  display.display();
+  delay(1500);
+}
+
+float getDistance() {
+  // Send a 10 microsecond pulse to trigger pin
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  
+  // Read echo pulse duration (timeout set to 30ms for ~5 meters)
+  long duration = pulseIn(ECHO_PIN, HIGH, 30000);
+  if (duration == 0) return 0; // Timeout / out of range
+  
+  // Calculate distance in cm (Speed of sound = 0.034 cm/us, divided by 2 for round trip)
+  float distance = duration * 0.034 / 2.0;
+  return distance;
+}
+
+void loop() {
+  float distance = getDistance();
+
+  // Print to Serial Monitor for debugging
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  // Update OLED Display
+  display.clearDisplay();
+  display.setTextColor(SH110X_WHITE);
+
+  // Label
+  display.setTextSize(1);
+  display.setCursor(0, 10);
+  display.print("DISTANCE:");
+
+  // Large Value Display
+  display.setTextSize(2);
+  display.setCursor(0, 28);
+  display.print(distance, 1);
+  display.print(" cm");
+
+  display.display();
+  
+  // Short delay between measurements
+  delay(500);
+}

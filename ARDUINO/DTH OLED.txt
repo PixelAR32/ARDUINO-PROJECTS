@@ -1,0 +1,60 @@
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SH110X.h>
+#include <DHT.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+#define OLED_ADDRESS 0x3C
+
+#define DHTPIN 2
+#define DHTTYPE DHT11
+
+Adafruit_SH1106G display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+DHT dht(DHTPIN, DHTTYPE);
+
+void setup() {
+  display.begin(OLED_ADDRESS, true);
+  dht.begin();
+  
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SH110X_WHITE);
+  display.setCursor(0, 0);
+  display.print("Starting...");
+  display.display();
+  delay(1500);
+}
+
+void loop() {
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature();
+
+  display.clearDisplay();
+  display.setTextColor(SH110X_WHITE);
+
+  // Temperature Value
+  display.setTextSize(1);
+  display.setCursor(0, 2);
+  display.print("Temp:");
+
+  display.setTextSize(2);
+  display.setCursor(0, 14);
+  display.print(temperature, 1);
+  display.print(" C");
+
+  // Humidity Value
+  display.setTextSize(1);
+  display.setCursor(0, 36);
+  display.print("Humidity:");
+
+  display.setTextSize(2);
+  display.setCursor(0, 48);
+  display.print(humidity, 1);
+  display.print(" %");
+
+  display.display();
+
+  delay(2000);
+}
