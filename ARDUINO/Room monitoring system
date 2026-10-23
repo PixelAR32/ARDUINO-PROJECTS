@@ -1,0 +1,141 @@
+
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SH110X.h>
+#include <DHT.h>
+
+// OLED configuration
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+#define OLED_ADDRESS 0x3C
+
+// DHT11 configuration
+#define DHTPIN 2
+#define DHTTYPE DHT11
+
+// Pin configuration
+const int fanRelayPin = 8;
+const int lightLedPin = 7;
+const int ldrPin = A0;
+
+// Control thresholds
+const float TEMP_THRESHOLD = 28.0;
+const int LDR_THRESHOLD = 500;
+
+// Sensor and display objects
+Adafruit_SH1106G display(
+  SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET
+);
+
+DHT dht(DHTPIN, DHTTYPE);
+
+void setup() {
+  Serial.begin(9600);
+
+  // Configure pins
+  pinMode(fanRelayPin, OUTPUT);
+  pinMode(lightLedPin, OUTPUT);
+  pinMode(ldrPin, INPUT);
+
+  // Start with fan and light OFF
+  digitalWrite(fanRelayPin, LOW);
+  digitalWrite(lightLedPin, LOW);
+
+  // Initialize OLED
+  if (!display.begin(OLED_ADDRESS, true)) {
+    Serial.println(F("OLED initialization failed!"));
+
+    while (true) {
+      delay(1000);
+      display.setRotation(2);
+
+    }
+  }
+
+  display.clearDisplay();
+  display.setTextColor(SH110X_WHITE);
+  
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.println(F("Starting system..."));
+  display.display();
+
+  // Initialize DHT11
+  dht.begin();
+
+
+  delay(2000);
+}
+
+void loop() {
+  // Read sensors
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature();
+  int ldrValue = analogRead(ldrPin);
+
+  // Check DHT11 readings
+  if (isnan(humidity) || isnan(temperature)) {
+    Serial.println(F("DHT11 read failed!"));
+
+    display.clearDisplay();
+    display.setTextSize(1);
+    display.setCursor(0, 0);
+    display.println(F("Sensor Error!"));
+    display.println(F("Check DHT11 wiring"));
+    display.display();
+
+    delay(2000);
+    return;
+  }
+
+  // Fan control: ON at or above 28 C
+  if (temperature >= TEMP_THRESHOLD) {
+    digitalWrite(fanRelayPin, HIGH);
+  } else {
+    digitalWrite(fanRelayPin, LOW);
+  }
+
+  // Light control: ON when LDR reading is below 500
+  if (ldrValue < LDR_THRESHOLD) {
+    digitalWrite(lightLedPin, HIGH);
+  } else {
+    digitalWrite(lightLedPin, LOW);
+  }
+
+  // Print sensor readings to Serial Monitor
+  Serial.print(F("Temperature: "));
+  Serial.print(temperature, 1);
+  Serial.print(F(" C | Humidity: "));
+  Serial.print(humidity, 1);
+  Serial.print(F(" % | LDR: "));
+  Serial.println(ldrValue);
+
+  // Update OLED
+  display.clearDisplay();
+  display.setTextColor(SH110X_WHITE);
+
+  // Temperature
+  display.setTextSize(1);
+  display.setCursor(0, 0);
+  display.print(F("Temperature:"));
+
+  display.setTextSize(2);
+  display.setCursor(0, 12);
+  display.print(temperature, 1);
+  display.print(F(" C"));
+
+  // Humidity
+  display.setTextSize(1);
+  display.setCursor(0, 36);
+  display.print(F("Humidity:"));
+
+  display.setTextSize(2);
+  display.setCursor(0, 46);
+  display.print(humidity, 1);
+  display.print(F(" %"));
+
+  display.display();
+
+  delay(2000);
+}
