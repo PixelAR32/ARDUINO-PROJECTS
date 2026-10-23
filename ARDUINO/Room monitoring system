@@ -1,3 +1,7 @@
+//This simple project shows the temperature and humdity and hence automates the fan(for temp control) and light.
+//Components : OLED Screen, Relay, DHT Sensor, LDR Sensor
+//Flash the code to your arduino and automate :)
+
 
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -8,7 +12,8 @@
 #define SCREEN_WIDTH 128
 #define SCREEN_HEIGHT 64
 #define OLED_RESET -1
-#define OLED_ADDRESS 0x3C
+#define OLED_ADDRESS 0x3C 
+//SDA - A4, SCL-A5
 
 // DHT11 configuration
 #define DHTPIN 2
